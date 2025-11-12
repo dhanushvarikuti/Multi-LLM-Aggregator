@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Multi-Model Chat</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #1e40af;
+            --bg-color: #f3f4f6;
+            --text-color: #1f2937;
+            --border-color: #e5e7eb;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px var(--shadow-color);
+        }
+
+        .header h1 {
+            color: var(--primary-color);
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: #6b7280;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            overflow: hidden;
+        }
+
+        .input-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 1rem;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            resize: vertical;
+            transition: border-color 0.3s ease;
+            font-family: inherit;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        .file-input {
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .file-input label {
+            background: var(--bg-color);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .file-input label:hover {
+            background: #e5e7eb;
+        }
+
+        #image-input {
+            display: none;
+        }
+
+        #image-preview {
+            max-width: 200px;
+            max-height: 200px;
+            object-fit: contain;
+            margin-top: 1rem;
+            border-radius: 0.5rem;
+            display: none;
+        }
+
+        .submit-btn {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            width: 100%;
+        }
+
+        .submit-btn:hover {
+            background: var(--secondary-color);
+        }
+
+        .submit-btn:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 2rem;
+            color: var(--primary-color);
+        }
+
+        .loading::after {
+            content: "...";
+            animation: dots 1.5s steps(4, end) infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% { content: "."; }
+            40% { content: ".."; }
+            60% { content: "..."; }
+            80%, 100% { content: ""; }
+        }
+
+        .response-section {
+            padding: 1.5rem;
+        }
+
+        .model-response {
+            background: var(--bg-color);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid var(--primary-color);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .model-name {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .model-name::before {
+            content: "";
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            background: var(--primary-color);
+            border-radius: 50%;
+        }
+
+        .response-content {
+            white-space: pre-wrap;
+            font-size: 0.95rem;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem auto;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .input-section, .response-section {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Multi-Model Chat</h1>
+            <p>Ask questions, analyze images, get responses from multiple AI models</p>
+        </div>
+        
+        <div class="chat-container">
+            <div class="input-section">
+                <form id="query-form">
+                    <textarea 
+                        name="prompt" 
+                        placeholder="Ask a question or describe an image..."
+                        required></textarea>
+                    <div class="file-input">
+                        <label for="image-input">
+                            📎 Upload Image (optional)
+                        </label>
+                        <input 
+                            type="file" 
+                            name="image" 
+                            id="image-input" 
+                            accept="image/*">
+                        <span id="file-name"></span>
+                    </div>
+                    <img id="image-preview" alt="Preview">
+                    <button type="submit" class="submit-btn">Send Query</button>
+                </form>
+            </div>
+
+            <div class="loading">Processing your request</div>
+            <div class="response-section" id="responses"></div>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('image-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            const fileNameSpan = document.getElementById('file-name');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('image-preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+                fileNameSpan.textContent = file.name;
+            } else {
+                fileNameSpan.textContent = '';
+                document.getElementById('image-preview').style.display = 'none';
+            }
+        });
+
+        document.getElementById('query-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const loading = document.querySelector('.loading');
+            const responsesDiv = document.getElementById('responses');
+            const submitBtn = this.querySelector('.submit-btn');
+            
+            submitBtn.disabled = true;
+            loading.style.display = 'block';
+            responsesDiv.innerHTML = '';
+            
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                
+                const data = await response.json();
+                
+                for (const [model, text] of Object.entries(data)) {
+                    const modelResponse = document.createElement('div');
+                    modelResponse.className = 'model-response';
+                    modelResponse.innerHTML = `
+                        <div class="model-name">${model.toUpperCase()}</div>
+                        <div class="response-content">${text.replace(/\n/g, '<br>')}</div>
+                    `;
+                    responsesDiv.appendChild(modelResponse);
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                responsesDiv.innerHTML = `
+                    <div class="model-response" style="border-left-color: #ef4444;">
+                        <div class="model-name" style="color: #ef4444;">Error</div>
+                        <div class="response-content">Failed to process your request. Please try again.</div>
+                    </div>
+                `;
+            } finally {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
